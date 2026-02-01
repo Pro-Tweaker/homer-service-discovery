@@ -1,4 +1,5 @@
 ---
+version: 2
 
 project_name: homer-service-discovery
 
@@ -21,68 +22,19 @@ builds:
     goarm:
       - "7"
 
-dockers:
-  - image_templates:
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:{{ .Tag }}-amd64"
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:latest-amd64"
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:v{{ .Major }}-amd64"
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:v{{ .Major }}.{{ .Minor }}-amd64"
-    goos: linux
-    goarch: amd64
-    use: buildx
+dockers_v2:
+  - images:
+      - "ghcr.io/pro-tweaker/{{ .ProjectName }}"
+    tags:
+      - "{{ .Tag }}"
+      - "latest"
+      - "v{{ .Major }}"
+      - "v{{ .Major }}.{{ .Minor }}"
     dockerfile: Dockerfile.goreleaser
-    build_flag_templates:
-      - "--platform=linux/amd64"
-
-  - image_templates:
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:{{ .Tag }}-arm64v8"
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:latest-arm64v8"
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:v{{ .Major }}-arm64v8"
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:v{{ .Major }}.{{ .Minor }}-arm64v8"
-    goos: linux
-    goarch: arm64
-    use: buildx
-    dockerfile: Dockerfile.goreleaser
-    build_flag_templates:
-      - "--platform=linux/arm64"
-
-  - image_templates:
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:{{ .Tag }}-arm32v7"
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:latest-arm32v7"
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:v{{ .Major }}-arm32v7"
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:v{{ .Major }}.{{ .Minor }}-arm32v7"
-    goos: linux
-    goarch: arm
-    goarm: 7
-    use: buildx
-    dockerfile: Dockerfile.goreleaser
-    build_flag_templates:
-      - "--platform=linux/arm/v7"
-
-docker_manifests:
-  - name_template: "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:{{ .Tag }}"
-    image_templates:
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:{{ .Tag }}-amd64"
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:{{ .Tag }}-arm64v8"
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:{{ .Tag }}-arm32v7"
-
-  - name_template: "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:latest"
-    image_templates:
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:latest-amd64"
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:latest-arm64v8"
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:latest-arm32v7"
-
-  - name_template: "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:v{{ .Major }}"
-    image_templates:
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:v{{ .Major }}-amd64"
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:v{{ .Major }}-arm64v8"
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:v{{ .Major }}-arm32v7"
-
-  - name_template: "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:v{{ .Major }}.{{ .Minor }}"
-    image_templates:
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:v{{ .Major }}.{{ .Minor }}-amd64"
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:v{{ .Major }}.{{ .Minor }}-arm64v8"
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}:v{{ .Major }}.{{ .Minor }}-arm32v7"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+      - linux/arm/v7
 
 archives:
   - name_template: >-
@@ -92,7 +44,7 @@ checksum:
   name_template: 'checksums.txt'
 
 snapshot:
-  name_template: "{{ .Tag }}-next"
+  version_template: "{{ .Tag }}-next"
 
 changelog:
   sort: asc
