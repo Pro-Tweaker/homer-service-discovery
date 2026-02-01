@@ -1,4 +1,5 @@
-module github.com/calvinbui/homer-docker-service-discovery
+module github.com/Pro-Tweaker/homer-docker-service-discovery
+
 
 go 1.20
 

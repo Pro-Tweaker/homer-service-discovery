@@ -1,9 +1,10 @@
 package consul
 
 import (
-	"github.com/calvinbui/homer-docker-service-discovery/internal/entry"
-	"github.com/hashicorp/consul/api"
 	"strings"
+
+	"github.com/Pro-Tweaker/homer-docker-service-discovery/internal/entry"
+	"github.com/hashicorp/consul/api"
 )
 
 func ListServices(consul *api.Client) map[string][]string {

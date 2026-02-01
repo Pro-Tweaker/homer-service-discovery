@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/calvinbui/homer-docker-service-discovery/internal/config"
-	"github.com/calvinbui/homer-docker-service-discovery/internal/consul"
-	"github.com/calvinbui/homer-docker-service-discovery/internal/docker"
-	"github.com/calvinbui/homer-docker-service-discovery/internal/entry"
-	"github.com/calvinbui/homer-docker-service-discovery/internal/logger"
-	"github.com/calvinbui/homer-docker-service-discovery/pkg/homer"
+	"github.com/Pro-Tweaker/homer-docker-service-discovery/internal/config"
+	"github.com/Pro-Tweaker/homer-docker-service-discovery/internal/consul"
+	"github.com/Pro-Tweaker/homer-docker-service-discovery/internal/docker"
+	"github.com/Pro-Tweaker/homer-docker-service-discovery/internal/entry"
+	"github.com/Pro-Tweaker/homer-docker-service-discovery/internal/logger"
+	"github.com/Pro-Tweaker/homer-docker-service-discovery/pkg/homer"
 	"github.com/hashicorp/consul/api/watch"
 	"github.com/hashicorp/go-hclog"
 )

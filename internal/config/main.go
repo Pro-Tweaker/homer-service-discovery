@@ -3,9 +3,9 @@ package config
 import (
 	"fmt"
 
-	"github.com/calvinbui/homer-docker-service-discovery/internal/consul"
-	"github.com/calvinbui/homer-docker-service-discovery/internal/docker"
-	"github.com/calvinbui/homer-docker-service-discovery/internal/logger"
+	"github.com/Pro-Tweaker/homer-docker-service-discovery/internal/consul"
+	"github.com/Pro-Tweaker/homer-docker-service-discovery/internal/docker"
+	"github.com/Pro-Tweaker/homer-docker-service-discovery/internal/logger"
 	"github.com/docker/docker/client"
 	"github.com/hashicorp/consul/api"
 

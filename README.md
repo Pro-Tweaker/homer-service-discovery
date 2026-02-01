@@ -62,7 +62,7 @@ docker run -d \
   -v /folder1/homer/config.yml:/config.yml \
   -v /sd/base.yml:/base.yml \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
-  ghcr.io/calvinbui/homer-service-discovery
+  ghcr.io/Pro-Tweaker/homer-service-discovery
 ```
 
 You can visit your Homer Dashboard to see the initial generated config (remember to hard refresh).
@@ -77,7 +77,7 @@ docker run -d \
   -l homer.enable=true \
   -l homer.service=Numbers \
   -l homer.name='This is number 2!' \
-  -l homer.subtitle='http-echo server'
+  -l homer.subtitle='http-echo server' \
   -l homer.icon='far fa-hand-peace' \
   -l homer.priority=2 \
   -l homer.url='http://localhost:5678' \

@@ -17,5 +17,5 @@ Fixes # (issue)
 
 ## Checklist:
 
-- [ ] I've read & comply with the [contributing guidelines](https://github.com/calvinbui/homer-service-discovery/blob/main/CONTRIBUTING.md)
+- [ ] I've read & comply with the [contributing guidelines](https://github.com/Pro-Tweaker/homer-service-discovery/blob/master/CONTRIBUTING.md)
 - [ ] I have made corresponding changes the documentation (README.md) if required.

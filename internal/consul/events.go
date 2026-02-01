@@ -1,7 +1,7 @@
 package consul
 
 import (
-	"github.com/calvinbui/homer-docker-service-discovery/internal/logger"
+	"github.com/Pro-Tweaker/homer-docker-service-discovery/internal/logger"
 	"github.com/hashicorp/consul/api"
 	"github.com/hashicorp/consul/api/watch"
 )
