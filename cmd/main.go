@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/calvinbui/homer-docker-service-discovery/internal/config"
-	"github.com/calvinbui/homer-docker-service-discovery/internal/consul"
-	"github.com/calvinbui/homer-docker-service-discovery/internal/docker"
-	"github.com/calvinbui/homer-docker-service-discovery/internal/entry"
-	"github.com/calvinbui/homer-docker-service-discovery/internal/logger"
-	"github.com/calvinbui/homer-docker-service-discovery/pkg/homer"
+	"github.com/Pro-Tweaker/homer-docker-service-discovery/internal/config"
+	"github.com/Pro-Tweaker/homer-docker-service-discovery/internal/consul"
+	"github.com/Pro-Tweaker/homer-docker-service-discovery/internal/docker"
+	"github.com/Pro-Tweaker/homer-docker-service-discovery/internal/entry"
+	"github.com/Pro-Tweaker/homer-docker-service-discovery/internal/logger"
+	"github.com/Pro-Tweaker/homer-docker-service-discovery/pkg/homer"
 	"github.com/hashicorp/consul/api/watch"
 	"github.com/hashicorp/go-hclog"
 )
@@ -44,7 +44,8 @@ func main() {
 		logger.Fatal("Error generating Homer config", err)
 	}
 
-	if conf.ServiceDiscovery == config.Docker {
+	switch conf.ServiceDiscovery {
+	case config.Docker:
 		logger.Info("Start watching for container creations and deletions")
 		if conf.HomerDockerSwarmMode {
 			logger.Info("Docker Swarm mode enabled")
@@ -58,10 +59,10 @@ func main() {
 					logger.Fatal("Error from Docker events", nil)
 				}
 
-				if event.Action == "start" || event.Action == "die" || strings.HasPrefix(event.Action, "health_status") || (event.Type == "service" && (event.Action == "create" || event.Action == "update" || event.Action == "remove")) {
+				if event.Action == "start" || event.Action == "die" || strings.HasPrefix(string(event.Action), "health_status") || (event.Type == "service" && (event.Action == "create" || event.Action == "update" || event.Action == "remove")) {
 					logger.Trace(fmt.Sprintf("%+v", event))
-					logger.Debug("A " + event.Action + " event occurred")
-					logger.Info(fmt.Sprintf("Event '%s' received from %s. Generating Homer config...", event.Action, event.Actor.Attributes["name"]))
+					logger.Debug("A " + string(event.Action) + " event occurred")
+					logger.Info(fmt.Sprintf("Event '%s' received from %s. Generating Homer config...", string(event.Action), event.Actor.Attributes["name"]))
 					time.Sleep(1 * time.Second)
 					err = generateConfig(ctx, conf)
 					if err != nil {
@@ -78,7 +79,7 @@ func main() {
 				return
 			}
 		}
-	} else if conf.ServiceDiscovery == config.Consul {
+	case config.Consul:
 		logger.Info("Start watching for Consul services change")
 		hcLogger := hclog.New(&hclog.LoggerOptions{
 			Name:       "consulcatalog",
@@ -99,7 +100,8 @@ func main() {
 
 func generateConfig(ctx context.Context, conf config.Config) error {
 	var parsedEntry []entry.RawEntry
-	if conf.ServiceDiscovery == config.Docker {
+	switch conf.ServiceDiscovery {
+	case config.Docker:
 		logger.Debug("Getting Docker containers")
 		containers, err := docker.ListRunningContainers(ctx, conf.Docker)
 		if err != nil {
@@ -128,7 +130,7 @@ func generateConfig(ctx context.Context, conf config.Config) error {
 				parsedEntry = append(parsedEntry, parsedService)
 			}
 		}
-	} else if conf.ServiceDiscovery == config.Consul {
+	case config.Consul:
 		logger.Debug("Getting Consul service")
 		services := consul.ListServices(conf.Consul)
 		for name, label := range services {

@@ -3,7 +3,7 @@ package docker
 import (
 	"context"
 
-	"github.com/calvinbui/homer-docker-service-discovery/internal/entry"
+	"github.com/Pro-Tweaker/homer-docker-service-discovery/internal/entry"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"

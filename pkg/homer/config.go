@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/calvinbui/homer-docker-service-discovery/internal/entry"
-	"github.com/calvinbui/homer-docker-service-discovery/internal/logger"
+	"github.com/Pro-Tweaker/homer-docker-service-discovery/internal/entry"
+	"github.com/Pro-Tweaker/homer-docker-service-discovery/internal/logger"
 )
 
 const (

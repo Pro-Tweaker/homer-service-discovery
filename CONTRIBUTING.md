@@ -4,7 +4,7 @@ We use GitHub to host code, build code, create releases, track issues and featur
 
 ## MIT Software License
 
-In short, when you submit code changes, your submissions are understood to be under the same [MIT License](https://github.com/calvinbui/homer-service-discovery/blob/master/LICENSE) that covers the project. Feel free to contact the maintainers if that's a concern.
+In short, when you submit code changes, your submissions are understood to be under the same [MIT License](https://github.com/Pro-Tweaker/homer-service-discovery/blob/master/LICENSE) that covers the project. Feel free to contact the maintainers if that's a concern.
 
 ## Report Bugs or Request Features using GitHub Issues
 
