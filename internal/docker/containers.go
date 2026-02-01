@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Pro-Tweaker/homer-docker-service-discovery/internal/entry"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 )
 
@@ -12,7 +13,7 @@ func ListRunningContainers(ctx context.Context, docker client.APIClient) ([]type
 		ctx = context.Background()
 	}
 
-	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{All: false})
+	containers, err := docker.ContainerList(ctx, container.ListOptions{All: false})
 
 	if err != nil {
 		return nil, err

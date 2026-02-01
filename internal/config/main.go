@@ -43,17 +43,18 @@ func New() (Config, error) {
 		return Config{}, fmt.Errorf("Error parsing config from env: %+v\n", err)
 	}
 
-	if conf.ServiceDiscovery == Docker {
+	switch conf.ServiceDiscovery {
+	case Docker:
 		conf.Docker, err = docker.CreateClient()
 		if err != nil {
 			return Config{}, fmt.Errorf("Error creating Docker client: %w", err)
 		}
-	} else if conf.ServiceDiscovery == Consul {
+	case Consul:
 		conf.Consul, err = consul.CreateClient(conf.ConsulHost)
 		if err != nil {
 			return Config{}, fmt.Errorf("Error creating Consul client: %w", err)
 		}
-	} else {
+	default:
 		return Config{}, fmt.Errorf("Unknow Service Discovery in configuration")
 	}
 	err = logger.SetLevel(conf.LogLevel)

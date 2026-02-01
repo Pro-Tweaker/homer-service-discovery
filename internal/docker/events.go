@@ -3,7 +3,6 @@ package docker
 import (
 	"context"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
@@ -17,5 +16,5 @@ func WatchEvents(ctx context.Context, docker client.APIClient, swarmMode bool) (
 		f.Add("type", "service")
 	}
 
-	return docker.Events(ctx, types.EventsOptions{Filters: f})
+	return docker.Events(ctx, events.ListOptions{Filters: f})
 }
