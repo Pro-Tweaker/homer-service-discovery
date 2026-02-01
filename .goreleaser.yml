@@ -24,7 +24,7 @@ builds:
 
 dockers_v2:
   - images:
-      - "ghcr.io/Pro-Tweaker/{{ .ProjectName }}"
+      - "ghcr.io/pro-tweaker/{{ .ProjectName }}"
     tags:
       - "{{ .Tag }}"
       - "latest"
