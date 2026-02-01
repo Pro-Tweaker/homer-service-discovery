@@ -47,10 +47,9 @@ jobs:
           go-version: "${{ env.go_version }}"
 
       - name: 📢 golangci-lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v9
         with:
           version: latest
-          skip-go-installation: true
 
   goreleaser:
     runs-on: ubuntu-latest
