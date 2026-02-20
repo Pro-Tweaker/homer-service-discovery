@@ -62,7 +62,7 @@ docker run -d \
   -v /folder1/homer/config.yml:/config.yml \
   -v /sd/base.yml:/base.yml \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
-  ghcr.io/Pro-Tweaker/homer-service-discovery
+  ghcr.io/pro-tweaker/homer-service-discovery
 ```
 
 You can visit your Homer Dashboard to see the initial generated config (remember to hard refresh).
