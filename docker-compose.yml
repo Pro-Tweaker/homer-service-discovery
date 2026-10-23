@@ -49,7 +49,7 @@ services:
       homer.enable: "true"
       homer.service: Planes
       homer.name: Quotes
-      homer.icon: fas fa-comment-dots
+      homer.icon: fa-solid fa-comment-dots
       homer.subtitle: http-echo server
       homer.url: http://localhost:5678
       homer.priority: 35

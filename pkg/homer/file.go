@@ -1,11 +1,16 @@
 package homer
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v3"
 )
+
+// newFileMode is used when the generated config does not exist yet (extra pages).
+const newFileMode = 0o644
 
 func GetConfig(path string) (Config, error) {
 	b, err := os.ReadFile(path)
@@ -40,21 +45,59 @@ func unmarshalConfig(contents []byte) (Config, error) {
 	return config, nil
 }
 
-func PutConfig(config Config, path string, permissions string) error {
+// PutConfig writes the config to path atomically: the content goes to a
+// temporary file in the same directory which is then renamed over path, so
+// Homer never reads a half-written file. An existing file keeps its mode and
+// owner; a missing one is created.
+func PutConfig(config Config, path string) error {
 	b, err := yaml.Marshal(config)
 	if err != nil {
 		return fmt.Errorf("error marshalling data into YAML: %w", err)
 	}
 
+	mode := os.FileMode(newFileMode)
 	fileStats, err := os.Stat(path)
-	if err != nil {
+	switch {
+	case err == nil:
+		mode = fileStats.Mode()
+	case errors.Is(err, os.ErrNotExist):
+		fileStats = nil
+	default:
 		return fmt.Errorf("error getting stats for config file '%s': %w", path, err)
 	}
 
-	err = os.WriteFile(path, b, fileStats.Mode())
+	tmp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*.tmp")
 	if err != nil {
-		return fmt.Errorf("error writing data to config file '%s'", path)
+		return fmt.Errorf("error creating temporary file next to '%s': %w", path, err)
+	}
+	tmpPath := tmp.Name()
+	// Clean up on any failure after this point. Rename on success makes this a no-op.
+	defer func() { _ = os.Remove(tmpPath) }()
+
+	if _, err := tmp.Write(b); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("error writing data to temporary file '%s': %w", tmpPath, err)
+	}
+	if err := tmp.Sync(); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("error syncing temporary file '%s': %w", tmpPath, err)
+	}
+	if err := tmp.Close(); err != nil {
+		return fmt.Errorf("error closing temporary file '%s': %w", tmpPath, err)
 	}
 
-	return preserveOwner(path, fileStats)
+	if err := os.Chmod(tmpPath, mode); err != nil {
+		return fmt.Errorf("error setting mode of '%s': %w", tmpPath, err)
+	}
+	if fileStats != nil {
+		if err := preserveOwner(tmpPath, fileStats); err != nil {
+			return err
+		}
+	}
+
+	if err := os.Rename(tmpPath, path); err != nil {
+		return fmt.Errorf("error replacing config file '%s': %w", path, err)
+	}
+
+	return nil
 }
