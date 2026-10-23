@@ -14,21 +14,17 @@ func ListServices(consul *api.Client) map[string][]string {
 	return services
 }
 
-func ParseService(name string, labels []string) entry.RawEntry {
+// ParseService turns Consul service tags of the form "key=value" into labels.
+// Only the first "=" separates key from value so that values containing "="
+// (URLs with query strings, API tokens, ...) are kept intact.
+func ParseService(name string, tags []string) entry.RawEntry {
 	s := entry.RawEntry{
-		Name: name,
+		Name:   name,
+		Labels: make(map[string]string, len(tags)),
 	}
-	s.Labels = make(map[string]string)
-	if len(labels) > 0 {
-		for _, label := range labels {
-			splitedLabel := strings.Split(label, "=")
-			if len(splitedLabel) > 1 {
-				s.Labels[splitedLabel[0]] = splitedLabel[1]
-			} else {
-				s.Labels[splitedLabel[0]] = ""
-			}
-
-		}
+	for _, tag := range tags {
+		key, value, _ := strings.Cut(tag, "=")
+		s.Labels[key] = value
 	}
 	return s
 }
