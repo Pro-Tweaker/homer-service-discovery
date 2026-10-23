@@ -72,14 +72,14 @@ func PutConfig(config Config, path string) error {
 	}
 	tmpPath := tmp.Name()
 	// Clean up on any failure after this point. Rename on success makes this a no-op.
-	defer os.Remove(tmpPath)
+	defer func() { _ = os.Remove(tmpPath) }()
 
 	if _, err := tmp.Write(b); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return fmt.Errorf("error writing data to temporary file '%s': %w", tmpPath, err)
 	}
 	if err := tmp.Sync(); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return fmt.Errorf("error syncing temporary file '%s': %w", tmpPath, err)
 	}
 	if err := tmp.Close(); err != nil {
