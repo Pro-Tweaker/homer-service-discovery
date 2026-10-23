@@ -13,6 +13,7 @@ Using Docker container or Consul catalog labels for service discovery is inspire
 - Passes every Homer option through, including smart card options
 - Generates extra Homer pages from a `homer.page` label
 - Sort groups and items by priority
+- Atomic config writes, debounced events and automatic reconnection to Docker / Consul
 - Multi-arch
 
 ## Usage
@@ -225,3 +226,5 @@ docker run -d \
 | `HOMER_CREATE_MISSING_SERVICES` | Create groups named by `homer.service` that are missing from the base config | `true` |
 | `HOMER_DEFAULT_TYPE` | Smart card `type` for items without `homer.type`, e.g. `Ping` | *(none)*     |
 | `HOMER_BASE_CONFIG_WATCH_INTERVAL` | How often the base config is checked for changes. `0` disables it | `10s` |
+| `DEBOUNCE_INTERVAL`  | Wait after the last Docker event before regenerating, so a burst of events causes one regeneration | `1s` |
+| `RECONNECT_INTERVAL` | Pause before reconnecting after the Docker event stream or Consul watch fails | `5s` |

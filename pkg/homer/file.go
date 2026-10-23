@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v3"
 )
@@ -44,7 +45,9 @@ func unmarshalConfig(contents []byte) (Config, error) {
 	return config, nil
 }
 
-// PutConfig writes the config to path. An existing file keeps its mode and
+// PutConfig writes the config to path atomically: the content goes to a
+// temporary file in the same directory which is then renamed over path, so
+// Homer never reads a half-written file. An existing file keeps its mode and
 // owner; a missing one is created.
 func PutConfig(config Config, path string) error {
 	b, err := yaml.Marshal(config)
@@ -52,21 +55,49 @@ func PutConfig(config Config, path string) error {
 		return fmt.Errorf("error marshalling data into YAML: %w", err)
 	}
 
+	mode := os.FileMode(newFileMode)
 	fileStats, err := os.Stat(path)
-	if errors.Is(err, os.ErrNotExist) {
-		if err := os.WriteFile(path, b, newFileMode); err != nil {
-			return fmt.Errorf("error creating config file '%s': %w", path, err)
-		}
-		return nil
-	}
-	if err != nil {
+	switch {
+	case err == nil:
+		mode = fileStats.Mode()
+	case errors.Is(err, os.ErrNotExist):
+		fileStats = nil
+	default:
 		return fmt.Errorf("error getting stats for config file '%s': %w", path, err)
 	}
 
-	err = os.WriteFile(path, b, fileStats.Mode())
+	tmp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*.tmp")
 	if err != nil {
-		return fmt.Errorf("error writing data to config file '%s': %w", path, err)
+		return fmt.Errorf("error creating temporary file next to '%s': %w", path, err)
+	}
+	tmpPath := tmp.Name()
+	// Clean up on any failure after this point. Rename on success makes this a no-op.
+	defer os.Remove(tmpPath)
+
+	if _, err := tmp.Write(b); err != nil {
+		tmp.Close()
+		return fmt.Errorf("error writing data to temporary file '%s': %w", tmpPath, err)
+	}
+	if err := tmp.Sync(); err != nil {
+		tmp.Close()
+		return fmt.Errorf("error syncing temporary file '%s': %w", tmpPath, err)
+	}
+	if err := tmp.Close(); err != nil {
+		return fmt.Errorf("error closing temporary file '%s': %w", tmpPath, err)
 	}
 
-	return preserveOwner(path, fileStats)
+	if err := os.Chmod(tmpPath, mode); err != nil {
+		return fmt.Errorf("error setting mode of '%s': %w", tmpPath, err)
+	}
+	if fileStats != nil {
+		if err := preserveOwner(tmpPath, fileStats); err != nil {
+			return err
+		}
+	}
+
+	if err := os.Rename(tmpPath, path); err != nil {
+		return fmt.Errorf("error replacing config file '%s': %w", path, err)
+	}
+
+	return nil
 }

@@ -7,11 +7,14 @@ import (
 	"github.com/hashicorp/consul/api"
 )
 
-func ListServices(consul *api.Client) map[string][]string {
+func ListServices(consul *api.Client) (map[string][]string, error) {
 	catalog := consul.Catalog()
 	q := &api.QueryOptions{}
-	services, _, _ := catalog.Services(q)
-	return services
+	services, _, err := catalog.Services(q)
+	if err != nil {
+		return nil, err
+	}
+	return services, nil
 }
 
 func ParseService(name string, labels []string) entry.RawEntry {
