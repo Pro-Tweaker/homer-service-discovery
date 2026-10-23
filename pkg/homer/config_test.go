@@ -1,0 +1,196 @@
+package homer
+
+import (
+	"reflect"
+	"testing"
+
+	"github.com/Pro-Tweaker/homer-docker-service-discovery/internal/entry"
+	"gopkg.in/yaml.v3"
+)
+
+func Test_buildItem(t *testing.T) {
+	tests := []struct {
+		name   string
+		labels map[string]string
+		want   Item
+	}{
+		{
+			name: "typed labels only",
+			labels: map[string]string{
+				EnableLabel:   "true",
+				ServiceLabel:  "Apps",
+				NameLabel:     "Echo",
+				IconLabel:     "fas fa-comment",
+				KeywordsLabel: "echo test",
+				PriorityLabel: "7",
+			},
+			want: Item{Name: "Echo", Icon: "fas fa-comment", Keywords: "echo test", Priority: 7},
+		},
+		{
+			name: "smart card options pass through with type coercion",
+			labels: map[string]string{
+				EnableLabel:                 "true",
+				NameLabel:                   "Proxmox",
+				TypeLabel:                   "Proxmox",
+				"homer.node":                "pve",
+				"homer.api_token":           "PVEAPIToken=root@pam!homer=abc",
+				"homer.warning_value":       "50",
+				"homer.hide_decimals":       "true",
+				"homer.useCredentials":      "false",
+				"homer.apikey":              "'0123'",
+				"homer.headers.X-Api-Key":   "secret",
+				"homer.headers.X-Other":     "\"42\"",
+				"not.homer.label":           "ignored",
+				"homer.service.icon":        "reserved for group options",
+				"homer.":                    "empty key ignored",
+				"com.docker.compose.oneoff": "False",
+			},
+			want: Item{
+				Name: "Proxmox",
+				Type: "Proxmox",
+				Extra: map[string]interface{}{
+					"node":           "pve",
+					"api_token":      "PVEAPIToken=root@pam!homer=abc",
+					"warning_value":  50,
+					"hide_decimals":  true,
+					"useCredentials": false,
+					"apikey":         "0123",
+					"headers": map[string]interface{}{
+						"X-Api-Key": "secret",
+						"X-Other":   "42",
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := buildItem(entry.RawEntry{Name: tt.name, Labels: tt.labels})
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("buildItem() =\n\n%+v\n\nwant\n\n%+v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestBuildConfig_sorting(t *testing.T) {
+	base := Config{
+		Services: []Service{
+			{Name: "Low", Priority: 1, Items: []Item{{Name: "a", Priority: 1}}},
+			{Name: "Default A"},
+			{Name: "High", Priority: 10},
+			{Name: "Default B"},
+		},
+	}
+	entries := []entry.RawEntry{
+		{Name: "c1", Labels: map[string]string{EnableLabel: "true", ServiceLabel: "High", NameLabel: "x", PriorityLabel: "2"}},
+		{Name: "c2", Labels: map[string]string{EnableLabel: "true", ServiceLabel: "High", NameLabel: "y", PriorityLabel: "5"}},
+		{Name: "c3", Labels: map[string]string{EnableLabel: "true", ServiceLabel: "Low", NameLabel: "b", PriorityLabel: "3"}},
+		{Name: "c4", Labels: map[string]string{EnableLabel: "true", ServiceLabel: "Missing", NameLabel: "skipped"}},
+		{Name: "c5", Labels: map[string]string{EnableLabel: "false", ServiceLabel: "High", NameLabel: "disabled"}},
+	}
+
+	got, err := BuildConfig(base, entries)
+	if err != nil {
+		t.Fatalf("BuildConfig() error = %v", err)
+	}
+
+	if order := serviceNames(got); !reflect.DeepEqual(order, []string{"High", "Low", "Default A", "Default B"}) {
+		t.Errorf("service order = %v", order)
+	}
+	if names := itemNames(got.Services[0]); !reflect.DeepEqual(names, []string{"y", "x"}) {
+		t.Errorf("High items = %v", names)
+	}
+	if names := itemNames(got.Services[1]); !reflect.DeepEqual(names, []string{"b", "a"}) {
+		t.Errorf("Low items = %v", names)
+	}
+}
+
+// Unknown keys at every level must survive a load + generate + save cycle.
+func Test_unknownKeysRoundTrip(t *testing.T) {
+	in := `
+title: Dashboard
+documentTitle: Tab title
+hotkey:
+  search: "Shift"
+updateIntervalMs: 5000
+proxy:
+  useCredentials: true
+  headers:
+    Authorization: Bearer x
+defaults:
+  layout: list
+  colorTheme: dark
+colors:
+  light:
+    link: "#123456"
+  dark:
+    something-new: value
+message:
+  title: Hi
+  newMessageKey: yes
+links:
+  - name: Page 2
+    url: "#page2"
+    newLinkKey: 1
+services:
+  - name: Infra
+    logo: group.png
+    class: wide
+    tagstyle: is-info
+    newGroupKey: g
+    items:
+      - name: Proxmox
+        type: Proxmox
+        node: pve
+        api_token: tok
+        warning_value: 50
+        hide_decimals: true
+        headers:
+          X-Api-Key: abc
+`
+	config, err := unmarshalConfig([]byte(in))
+	if err != nil {
+		t.Fatalf("unmarshalConfig() error = %v", err)
+	}
+
+	config, err = BuildConfig(config, nil)
+	if err != nil {
+		t.Fatalf("BuildConfig() error = %v", err)
+	}
+
+	out, err := yaml.Marshal(config)
+	if err != nil {
+		t.Fatalf("yaml.Marshal() error = %v", err)
+	}
+
+	var want, got map[string]interface{}
+	if err := yaml.Unmarshal([]byte(in), &want); err != nil {
+		t.Fatal(err)
+	}
+	if err := yaml.Unmarshal(out, &got); err != nil {
+		t.Fatal(err)
+	}
+	// "header" has no omitempty and is always written; it is not part of the input.
+	delete(got, "header")
+
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("round trip changed the config.\n\ngot:\n%s\n\nwant:\n%s", out, in)
+	}
+}
+
+func serviceNames(c Config) []string {
+	var names []string
+	for _, s := range c.Services {
+		names = append(names, s.Name)
+	}
+	return names
+}
+
+func itemNames(s Service) []string {
+	var names []string
+	for _, i := range s.Items {
+		names = append(names, i.Name)
+	}
+	return names
+}

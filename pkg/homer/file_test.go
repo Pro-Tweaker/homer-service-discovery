@@ -41,9 +41,12 @@ func Test_unmarshalConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Non-existing key",
+			name: "Unknown key is kept",
 			args: args{
 				contents: []byte(`thisIsMyRandomKey: okayGoodForYou`),
+			},
+			want: Config{
+				Extra: map[string]interface{}{"thisIsMyRandomKey": "okayGoodForYou"},
 			},
 			wantErr: false,
 		},

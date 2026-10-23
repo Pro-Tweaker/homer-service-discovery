@@ -93,18 +93,54 @@ The full list of labels are:
 |--------------------|------------------------------------------------------------------------------------------------|
 | `homer.enable`     | Set to `true` include in Homer's config                                                        |
 | `homer.service`    | The name of Homer Service to add this item to. It must exist in the base config                |
-| `homer.priority`   | The priority level of the service. The higher the number, the higher it appears in the Service |
+| `homer.priority`   | The priority level of the item. The higher the number, the higher it appears in the Service    |
 | `homer.name`       | The item's name (See Homer's documentation)                                                    |
 | `homer.logo`       | The item's logo (See Homer's documentation)                                                    |
 | `homer.icon`       | The item's icon (See Homer's documentation)                                                    |
 | `homer.subtitle`   | The item's subtitle (See Homer's documentation)                                                |
 | `homer.tag`        | The item's tag (See Homer's documentation)                                                     |
+| `homer.keywords`   | The item's search keywords (See Homer's documentation)                                         |
 | `homer.url`        | The item's url (See Homer's documentation)                                                     |
 | `homer.target`     | The item's target (See Homer's documentation)                                                  |
 | `homer.tagstyle`   | The item's tagstyle (See Homer's documentation)                                                |
 | `homer.type`       | The item's type (See Homer's documentation)                                                    |
 | `homer.class`      | The item's class (See Homer's documentation)                                                   |
 | `homer.background` | The item's background (See Homer's documentation)                                              |
+| `homer.<anything>` | Any other key is copied to the item as-is. Use it for smart card options (see below)           |
+
+### Smart cards and other item options
+
+Any `homer.<key>` label that is not in the table above is written to the item unchanged, so every option of
+Homer's [smart cards](https://github.com/bastienwirtz/homer/blob/main/docs/customservices.md) and any key added
+in future Homer releases works without an update of this tool:
+
+- `true` / `false` become booleans and whole numbers become integers. Wrap a value in quotes
+  (`homer.apikey='0123'`) to force a string.
+- A dotted key creates a nested map: `homer.headers.Authorization=Bearer x` becomes `headers: {Authorization: Bearer x}`.
+- Labels starting with `homer.service.` are reserved for future group options and ignored.
+
+```bash
+docker run -d \
+  -l homer.enable=true \
+  -l homer.service=Infra \
+  -l homer.name=Proxmox \
+  -l homer.type=Proxmox \
+  -l homer.url=https://pve.local:8006 \
+  -l homer.node=pve \
+  -l 'homer.api_token=PVEAPIToken=root@pam!homer=xxxx' \
+  -l homer.warning_value=50 \
+  -l homer.hide_decimals=true \
+  ...
+```
+
+### Base config passthrough
+
+Every key in the base config is preserved in the generated config, including keys this tool does not know
+about (`defaults`, `proxy`, `hotkey`, `updateIntervalMs`, group `class`/`logo`, smart card options on static
+items, ...). Only the `items` lists of the `services` are modified.
+
+Services (groups) also accept a `priority` key. Groups with a higher priority are listed first; groups with
+the same priority keep the order of the base config.
 
 ## Environment Variables
 
