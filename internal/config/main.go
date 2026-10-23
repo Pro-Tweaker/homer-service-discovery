@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/Pro-Tweaker/homer-docker-service-discovery/internal/consul"
 	"github.com/Pro-Tweaker/homer-docker-service-discovery/internal/docker"
@@ -33,6 +34,25 @@ type Config struct {
 	HomerConfigPath string `env:"HOMER_CONFIG" envDefault:"/config.yml"`
 
 	HomerDockerSwarmMode bool `env:"HOMER_DOCKER_SWARM" envDefault:"false"`
+
+	// HomerCreateMissingServices creates a group for a homer.service value that
+	// is not in the base config instead of skipping the item.
+	HomerCreateMissingServices bool `env:"HOMER_CREATE_MISSING_SERVICES" envDefault:"true"`
+
+	// HomerDefaultType is the smart card type given to items without homer.type.
+	HomerDefaultType string `env:"HOMER_DEFAULT_TYPE" envDefault:""`
+
+	// HomerBaseConfigWatchInterval is how often the base config is checked for
+	// changes. Zero disables the watcher.
+	HomerBaseConfigWatchInterval time.Duration `env:"HOMER_BASE_CONFIG_WATCH_INTERVAL" envDefault:"10s"`
+
+	// DebounceInterval is how long to wait after the last provider event before
+	// regenerating, so a burst of events (compose up) causes one regeneration.
+	DebounceInterval time.Duration `env:"DEBOUNCE_INTERVAL" envDefault:"1s"`
+
+	// ReconnectInterval is the pause before reconnecting to the provider after
+	// its event stream fails.
+	ReconnectInterval time.Duration `env:"RECONNECT_INTERVAL" envDefault:"5s"`
 }
 
 func New() (Config, error) {
