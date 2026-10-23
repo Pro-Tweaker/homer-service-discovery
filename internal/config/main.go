@@ -45,6 +45,14 @@ type Config struct {
 	// HomerBaseConfigWatchInterval is how often the base config is checked for
 	// changes. Zero disables the watcher.
 	HomerBaseConfigWatchInterval time.Duration `env:"HOMER_BASE_CONFIG_WATCH_INTERVAL" envDefault:"10s"`
+
+	// DebounceInterval is how long to wait after the last provider event before
+	// regenerating, so a burst of events (compose up) causes one regeneration.
+	DebounceInterval time.Duration `env:"DEBOUNCE_INTERVAL" envDefault:"1s"`
+
+	// ReconnectInterval is the pause before reconnecting to the provider after
+	// its event stream fails.
+	ReconnectInterval time.Duration `env:"RECONNECT_INTERVAL" envDefault:"5s"`
 }
 
 func New() (Config, error) {
