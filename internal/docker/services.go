@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/Pro-Tweaker/homer-docker-service-discovery/internal/entry"
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
 )
@@ -14,7 +13,7 @@ func ListRunningServices(ctx context.Context, docker client.APIClient) ([]swarm.
 		ctx = context.Background()
 	}
 
-	services, err := docker.ServiceList(ctx, types.ServiceListOptions{Status: true})
+	services, err := docker.ServiceList(ctx, swarm.ServiceListOptions{Status: true})
 
 	if err != nil {
 		return nil, err
@@ -24,18 +23,18 @@ func ListRunningServices(ctx context.Context, docker client.APIClient) ([]swarm.
 }
 
 func ParseService(ctx context.Context, docker client.APIClient, service swarm.Service) (entry.RawEntry, error) {
-	i, _, err := docker.ServiceInspectWithRaw(ctx, service.ID, types.ServiceInspectOptions{})
+	i, _, err := docker.ServiceInspectWithRaw(ctx, service.ID, swarm.ServiceInspectOptions{})
 
 	if err != nil {
 		return entry.RawEntry{}, err
 	}
 
 	s := entry.RawEntry{
-		Name: i.Spec.Annotations.Name,
+		Name: i.Spec.Name,
 	}
 
 	if i.Spec.Labels != nil {
-		s.Labels = i.Spec.Annotations.Labels
+		s.Labels = i.Spec.Labels
 	}
 
 	return s, nil
