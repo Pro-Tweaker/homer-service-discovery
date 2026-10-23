@@ -1,6 +1,8 @@
 package homer
 
 import (
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -32,6 +34,7 @@ func Test_buildItem(t *testing.T) {
 				EnableLabel:                 "true",
 				NameLabel:                   "Proxmox",
 				TypeLabel:                   "Proxmox",
+				PageLabel:                   "infra",
 				"homer.node":                "pve",
 				"homer.api_token":           "PVEAPIToken=root@pam!homer=abc",
 				"homer.warning_value":       "50",
@@ -41,7 +44,7 @@ func Test_buildItem(t *testing.T) {
 				"homer.headers.X-Api-Key":   "secret",
 				"homer.headers.X-Other":     "\"42\"",
 				"not.homer.label":           "ignored",
-				"homer.service.icon":        "reserved for group options",
+				ServiceIconLabel:            "belongs to the group",
 				"homer.":                    "empty key ignored",
 				"com.docker.compose.oneoff": "False",
 			},
@@ -90,7 +93,7 @@ func TestBuildConfig_sorting(t *testing.T) {
 		{Name: "c5", Labels: map[string]string{EnableLabel: "false", ServiceLabel: "High", NameLabel: "disabled"}},
 	}
 
-	got, err := BuildConfig(base, entries)
+	got, err := BuildConfig(base, entries, Options{})
 	if err != nil {
 		t.Fatalf("BuildConfig() error = %v", err)
 	}
@@ -103,6 +106,115 @@ func TestBuildConfig_sorting(t *testing.T) {
 	}
 	if names := itemNames(got.Services[1]); !reflect.DeepEqual(names, []string{"b", "a"}) {
 		t.Errorf("Low items = %v", names)
+	}
+}
+
+func TestBuildConfig_createMissingServices(t *testing.T) {
+	base := Config{Services: []Service{{Name: "Existing", Icon: "fas fa-box"}}}
+	entries := []entry.RawEntry{
+		// Options arrive on a later container than the one that creates the group.
+		{Name: "c1", Labels: map[string]string{EnableLabel: "true", ServiceLabel: "Media", NameLabel: "Plex"}},
+		{Name: "c2", Labels: map[string]string{
+			EnableLabel: "true", ServiceLabel: "Media", NameLabel: "Jellyfin",
+			ServiceIconLabel: "fas fa-film", ServicePriorityLabel: "5", ServiceClassLabel: "wide",
+		}},
+		// Base config values are never overridden by labels.
+		{Name: "c3", Labels: map[string]string{EnableLabel: "true", ServiceLabel: "Existing", NameLabel: "x", ServiceIconLabel: "fas fa-other"}},
+		// A missing service name is still skipped.
+		{Name: "c4", Labels: map[string]string{EnableLabel: "true", NameLabel: "no service"}},
+	}
+
+	got, err := BuildConfig(base, entries, Options{CreateMissingServices: true, DefaultType: "Ping"})
+	if err != nil {
+		t.Fatalf("BuildConfig() error = %v", err)
+	}
+
+	if order := serviceNames(got); !reflect.DeepEqual(order, []string{"Media", "Existing"}) {
+		t.Fatalf("service order = %v", order)
+	}
+	media := got.Services[0]
+	if media.Icon != "fas fa-film" || media.Priority != 5 || media.Class != "wide" {
+		t.Errorf("Media group options not applied: %+v", media)
+	}
+	if names := itemNames(media); !reflect.DeepEqual(names, []string{"Plex", "Jellyfin"}) {
+		t.Errorf("Media items = %v", names)
+	}
+	for _, item := range media.Items {
+		if item.Type != "Ping" {
+			t.Errorf("item %s type = %q, want Ping", item.Name, item.Type)
+		}
+	}
+	if got.Services[1].Icon != "fas fa-box" {
+		t.Errorf("base icon overridden: %q", got.Services[1].Icon)
+	}
+	if len(got.Services[1].Items) != 1 {
+		t.Errorf("Existing items = %v", itemNames(got.Services[1]))
+	}
+
+	// Disabled: the unknown group is skipped as before.
+	got, _ = BuildConfig(Config{}, entries[:1], Options{})
+	if len(got.Services) != 0 {
+		t.Errorf("service created while disabled: %v", serviceNames(got))
+	}
+}
+
+func TestGroupByPage(t *testing.T) {
+	entries := []entry.RawEntry{
+		{Name: "a", Labels: map[string]string{}},
+		{Name: "b", Labels: map[string]string{PageLabel: "media"}},
+		{Name: "c", Labels: map[string]string{PageLabel: "../etc"}},
+		{Name: "d", Labels: map[string]string{PageLabel: "media"}},
+	}
+	got := GroupByPage(entries)
+	names := func(es []entry.RawEntry) []string {
+		var n []string
+		for _, e := range es {
+			n = append(n, e.Name)
+		}
+		return n
+	}
+	if n := names(got[MainPage]); !reflect.DeepEqual(n, []string{"a", "c"}) {
+		t.Errorf("main page = %v", n)
+	}
+	if n := names(got["media"]); !reflect.DeepEqual(n, []string{"b", "d"}) {
+		t.Errorf("media page = %v", n)
+	}
+	if len(got) != 2 {
+		t.Errorf("pages = %v", got)
+	}
+	if _, ok := GroupByPage(nil)[MainPage]; !ok {
+		t.Error("main page missing for empty input")
+	}
+}
+
+func TestPutConfig_createsMissingFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "page.yml")
+	if err := PutConfig(Config{Title: "Page"}, path); err != nil {
+		t.Fatalf("PutConfig() error = %v", err)
+	}
+	got, err := GetConfig(path)
+	if err != nil {
+		t.Fatalf("GetConfig() error = %v", err)
+	}
+	if got.Title != "Page" {
+		t.Errorf("title = %q", got.Title)
+	}
+	// Existing file is overwritten.
+	if err := PutConfig(Config{Title: "Again"}, path); err != nil {
+		t.Fatalf("PutConfig() second error = %v", err)
+	}
+	b, _ := os.ReadFile(path)
+	if string(b) != "title: Again\nheader: false\n" {
+		t.Errorf("content = %q", b)
+	}
+	// No temporary file is left behind.
+	entries, _ := os.ReadDir(filepath.Dir(path))
+	if len(entries) != 1 {
+		var names []string
+		for _, e := range entries {
+			names = append(names, e.Name())
+		}
+		t.Errorf("leftover files: %v", names)
 	}
 }
 
@@ -154,7 +266,7 @@ services:
 		t.Fatalf("unmarshalConfig() error = %v", err)
 	}
 
-	config, err = BuildConfig(config, nil)
+	config, err = BuildConfig(config, nil, Options{})
 	if err != nil {
 		t.Fatalf("BuildConfig() error = %v", err)
 	}

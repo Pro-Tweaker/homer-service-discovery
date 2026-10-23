@@ -3,22 +3,22 @@ subtitle: Enter!
 
 services:
   - name: Numbers
-    icon: fas fa-list-ol
+    icon: fa-solid fa-list-ol
     items:
       - name: 4
-        icon: fas fa-dice-four
+        icon: fa-solid fa-dice-four
         url: https://fontawesome.com/v5.15/icons/dice-four?style=solid
         priority: 4
       - name: 3
-        icon: fab fa-html5
+        icon: fa-brands fa-html5
         url: https://fontawesome.com/v5.15/icons/html5?style=brands
         priority: 3
       - name: 1
-        icon: far fa-money-bill-alt
+        icon: fa-regular fa-money-bill-alt
         url: https://fontawesome.com/v5.15/icons/money-bill-alt?style=regular
         priority: 1
 
   # Empty section
   - name: Letters
-    icon: fas fa-sun
+    icon: fa-solid fa-sun
     items: []
