@@ -1,0 +1,24 @@
+{
+  // gofmt only produces tabs and CI enforces `go fmt`. Render tabs 2 columns
+  // wide instead of converting them to spaces.
+  "[go]": {
+    "editor.insertSpaces": false,
+    "editor.tabSize": 2,
+    "editor.detectIndentation": false,
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "golang.go"
+  },
+  "[go.mod]": {
+    "editor.insertSpaces": false,
+    "editor.tabSize": 2,
+    "editor.detectIndentation": false
+  },
+  "[go.sum]": {
+    "editor.insertSpaces": false,
+    "editor.tabSize": 2,
+    "editor.detectIndentation": false
+  },
+  "gopls": {
+    "formatting.gofumpt": false
+  }
+}
