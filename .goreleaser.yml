@@ -4,6 +4,8 @@ version: 2
 project_name: homer-service-discovery
 
 release:
+  # Tags such as v2.0.0-pre or v2.0.0-rc.1 are published as GitHub pre-releases.
+  prerelease: auto
   github:
     owner: Pro-Tweaker
     name: homer-service-discovery
@@ -25,11 +27,13 @@ builds:
 dockers_v2:
   - images:
       - "ghcr.io/pro-tweaker/{{ .ProjectName }}"
+    # Floating tags only move for stable releases. A tag that renders empty is
+    # skipped, so a pre-release is published as its exact tag only.
     tags:
       - "{{ .Tag }}"
-      - "latest"
-      - "v{{ .Major }}"
-      - "v{{ .Major }}.{{ .Minor }}"
+      - '{{ if not .Prerelease }}latest{{ end }}'
+      - '{{ if not .Prerelease }}v{{ .Major }}{{ end }}'
+      - '{{ if not .Prerelease }}v{{ .Major }}.{{ .Minor }}{{ end }}'
     dockerfile: Dockerfile.goreleaser
     platforms:
       - linux/amd64
