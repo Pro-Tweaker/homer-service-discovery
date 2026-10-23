@@ -52,26 +52,26 @@ func New() (Config, error) {
 	conf := Config{}
 
 	if err := env.Parse(&conf); err != nil {
-		return Config{}, fmt.Errorf("Error parsing config from env: %+v\n", err)
+		return Config{}, fmt.Errorf("error parsing config from env: %w", err)
 	}
 
 	switch conf.ServiceDiscovery {
 	case Docker:
 		conf.Docker, err = docker.CreateClient()
 		if err != nil {
-			return Config{}, fmt.Errorf("Error creating Docker client: %w", err)
+			return Config{}, fmt.Errorf("error creating Docker client: %w", err)
 		}
 	case Consul:
 		conf.Consul, err = consul.CreateClient(conf.ConsulHost)
 		if err != nil {
-			return Config{}, fmt.Errorf("Error creating Consul client: %w", err)
+			return Config{}, fmt.Errorf("error creating Consul client: %w", err)
 		}
 	default:
-		return Config{}, fmt.Errorf("Unknow Service Discovery in configuration")
+		return Config{}, fmt.Errorf("unknown service discovery %q in configuration", conf.ServiceDiscovery)
 	}
 	err = logger.SetLevel(conf.LogLevel)
 	if err != nil {
-		return Config{}, fmt.Errorf("Error setting log level: %w", err)
+		return Config{}, fmt.Errorf("error setting log level: %w", err)
 	}
 
 	logger.Debug(fmt.Sprintf("%+v", conf))
