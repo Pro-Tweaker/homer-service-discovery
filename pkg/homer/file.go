@@ -3,7 +3,6 @@ package homer
 import (
 	"fmt"
 	"os"
-	"syscall"
 
 	"gopkg.in/yaml.v3"
 )
@@ -57,13 +56,5 @@ func PutConfig(config Config, path string, permissions string) error {
 		return fmt.Errorf("error writing data to config file '%s'", path)
 	}
 
-	fileSysStats := fileStats.Sys().(*syscall.Stat_t)
-	uid := int(fileSysStats.Uid)
-	gid := int(fileSysStats.Gid)
-	err = os.Chown(path, uid, gid)
-	if err != nil {
-		return fmt.Errorf("error chowning config '%s' with user '%v' and group '%v': %w", path, uid, gid, err)
-	}
-
-	return nil
+	return preserveOwner(path, fileStats)
 }
