@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"gopkg.in/yaml.v3"
 )
@@ -96,6 +97,14 @@ func PutConfig(config Config, path string) error {
 	}
 
 	if err := os.Rename(tmpPath, path); err != nil {
+		// A single file bind-mounted into a container can't be replaced by a
+		// rename (EBUSY), so fall back to rewriting its contents in place.
+		if errors.Is(err, syscall.EBUSY) {
+			if err := os.WriteFile(path, b, mode); err != nil {
+				return fmt.Errorf("error writing config file '%s' in place: %w", path, err)
+			}
+			return nil
+		}
 		return fmt.Errorf("error replacing config file '%s': %w", path, err)
 	}
 
